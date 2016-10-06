@@ -1,21 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int
-main(int argc, char *argv[])
+#define VALUES_PER_LINE 16
+#define LINE_INDENT "\t"
+
+int main(int argc, char *argv[])
 {
-    if(argc <= 2)
+    if(argc < 3)
     {
-        printf("Usage: %s variablename datafile\n", argv[0]);
+        printf("Usage: %s variablename datafilename\n", argv[0]);
         return -1;
     }
 
+    int Result = 0;
     char *DataFilename = argv[2];
     FILE *DataFile = fopen(DataFilename, "rb");
     if(DataFile)
     {
         fseek(DataFile, 0, SEEK_END);
-        unsigned long long FileLength = ftell(DataFile);
+        size_t FileLength = ftell(DataFile);
         rewind(DataFile);
 
         unsigned char *Data = (unsigned char *)malloc(FileLength);
@@ -24,25 +27,22 @@ main(int argc, char *argv[])
             size_t BytesRead = fread(Data, 1, FileLength, DataFile);
             if(BytesRead == FileLength)
             {
-                const int ValuesPerLine = 16;
-                const char *Indent = "\t";
-
                 char *VariableName = argv[1];
-                printf("unsigned char %s[%llu] = {", VariableName, FileLength);
-                bool MultiLined = FileLength > ValuesPerLine;
+                printf("unsigned char %s[%zu] = {", VariableName, FileLength);
+                int MultiLined = FileLength > VALUES_PER_LINE;
 
                 for(int DataIndex = 0; DataIndex < FileLength; ++DataIndex)
                 {
-                    if(MultiLined && (DataIndex % ValuesPerLine == 0))
+                    if(MultiLined && (DataIndex % VALUES_PER_LINE == 0))
                     {
-                        printf("\n%s", Indent);
+                        printf("\n%s", LINE_INDENT);
                     }
 
                     printf("0x%.2X", Data[DataIndex]);
 
                     if((DataIndex < FileLength - 1))
                     {
-                        if((DataIndex + 1) % ValuesPerLine != 0)
+                        if((DataIndex + 1) % VALUES_PER_LINE != 0)
                         {
                             printf(", ");
                         }
@@ -60,18 +60,21 @@ main(int argc, char *argv[])
             }
             else
             {
-                printf("Error: Could only read %llu out of %llu bytes!\n", BytesRead, FileLength);
+                fprintf(stderr, "Error: Read %zu out of %zu bytes!\n", BytesRead, FileLength);
+                Result = -4;
             }
         }
         else
         {
-            printf("Error: Could not allocate %llu bytes of memory!\n", FileLength);
+            fprintf(stderr, "Error: Could not allocate %zu bytes of memory!\n", FileLength);
+            Result = -3;
         }
     }
     else
     {
-        printf("Error: Could not open file: %s\n", DataFilename);
+        fprintf(stderr, "Error: Could not open file: %s\n", DataFilename);
+        Result = -2;
     }
 
-    return 0;
+    return Result;
 }
