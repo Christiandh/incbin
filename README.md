@@ -1,5 +1,5 @@
 # incbin 
-A very simple program to convert files into normal c++ arrays.
+A very simple program to convert files into normal c/c++ arrays.
 ### Usage: 
 **incbin** *variablename* *datafilename*
 ### Printed result:
